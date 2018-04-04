@@ -178,20 +178,21 @@ class Database {
    * ```
    */
   beginTransaction ({ alwaysRollback }) {
-    if (this._globalTrx) {
-      if (alwaysRollback) {
-        this._globalTrx.commit = this._globalTrx.rollback
-      }
-      
-      return this._globalTrx
-    }
-
     return new Promise((resolve, reject) => {
-      this
-        .knex
-        .transaction(function (trx) {
-          resolve(trx)
-        }).catch(() => {})
+      if (this._globalTrx) {
+        if (alwaysRollback) {
+          this._globalTrx.commit = this._globalTrx.rollback
+        }
+
+        resolve(this._globalTrx)
+      }
+      else {
+        this
+          .knex
+          .transaction(function (trx) {
+            resolve(trx)
+          }).catch(() => {}) // to-do throw exception
+      }
     })
   }
 
