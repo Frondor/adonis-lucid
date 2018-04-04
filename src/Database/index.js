@@ -177,7 +177,15 @@ class Database {
    *   .insert({ username: 'virk' })
    * ```
    */
-  beginTransaction () {
+  beginTransaction ({ alwaysRollback }) {
+    if (this._globalTrx) {
+      if (alwaysRollback) {
+        this._globalTrx.commit = this._globalTrx.rollback
+      }
+      
+      return this._globalTrx
+    }
+
     return new Promise((resolve, reject) => {
       this
         .knex
@@ -212,8 +220,8 @@ class Database {
    *
    * @return {void}
    */
-  async beginGlobalTransaction () {
-    this._globalTrx = await this.beginTransaction()
+  async beginGlobalTransaction (options) {
+    this._globalTrx = await this.beginTransaction(options)
   }
 
   /**
@@ -224,8 +232,10 @@ class Database {
    * @return {void}
    */
   rollbackGlobalTransaction () {
-    this._globalTrx.rollback()
-    this._globalTrx = null
+    if (this._globalTrx) {
+      this._globalTrx.rollback()
+      this._globalTrx = null
+    }
   }
 
   /**
@@ -236,8 +246,10 @@ class Database {
    * @return {void}
    */
   commitGlobalTransaction () {
-    this._globalTrx.commit()
-    this._globalTrx = null
+    if (this._globalTrx) {
+      this._globalTrx.commit()
+      this._globalTrx = null
+    }
   }
 
   /**
